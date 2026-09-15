@@ -1,0 +1,37 @@
+name: Aktualizuj ogloszenia
+
+on:
+  schedule:
+    # Uruchamiaj automatycznie co 2 godziny
+    - cron: '0 */2 * * *'
+  # Pozwala odpalić ręcznie w dowolnej chwili z zakładki Actions
+  workflow_dispatch:
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Pobierz kod
+        uses: actions/checkout@v4
+
+      - name: Ustaw Pythona
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Zainstaluj biblioteki
+        run: |
+          pip install cloudscraper beautifulsoup4
+
+      - name: Pobierz aktualne ogloszenia
+        run: python sync.py
+
+      - name: Zapisz zmiany w repozytorium
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add offers.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Automatyczna aktualizacja ofert" && git push)
