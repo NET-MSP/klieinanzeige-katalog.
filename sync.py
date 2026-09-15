@@ -1,6 +1,5 @@
 import json
 import re
-import time
 import cloudscraper
 from bs4 import BeautifulSoup
 
@@ -27,34 +26,29 @@ if response.status_code == 200:
         price_tag = ad.find("p", class_="aditem-main--middle--price-shipping--price")
         price = price_tag.get_text(strip=True) if price_tag else "Preis auf Anfrage"
         
-        # Domyślne zdjęcie z listy na wypadek błędu
+        # Bild-URL erfassen und auf maximale HD-Aufloesung umstellen
         img_tag = ad.find("img")
-        hd_image = ""
+        img_src = ""
         if img_tag:
-            hd_image = img_tag.get("src") or img_tag.get("data-src") or ""
-
-        # Wejście w ogłoszenie po prawdziwe zdjęcie HD
-        if link != "#":
-            try:
-                ad_resp = scraper.get(link)
-                if ad_resp.status_code == 200:
-                    ad_soup = BeautifulSoup(ad_resp.text, "html.parser")
-                    # Szukamy głównego zdjęcia w pełnej rozdzielczości
-                    main_img = ad_soup.find("img", id="viewad-image") or ad_soup.find("meta", property="og:image")
-                    if main_img:
-                        img_url = main_img.get("src") or main_img.get("content") or ""
-                        if img_url:
-                            # Wymuszenie formatu HD $_59.JPG / $_57.JPG
-                            if "?" in img_url:
-                                base_part = img_url.split("?")[0]
-                                hd_image = f"{base_part}?rule=$_59.JPG"
-                            elif "$_" in img_url:
-                                hd_image = re.sub(r"\$_[\w\.]+", "$_59.JPG", img_url)
-                            else:
-                                hd_image = img_url
-                time.sleep(0.5)  # Krótka pauza, by nie przeciążać serwera
-            except Exception as e:
-                print(f"Błąd pobierania zdjęcia dla {ad_id}: {e}")
+            raw_img = (
+                img_tag.get("data-imgsrc") 
+                or img_tag.get("data-src") 
+                or img_tag.get("src") 
+                or ""
+            )
+            
+            # 1. Format: img.kleinanzeigen.de (Regel-Parameter)
+            if "rule=" in raw_img:
+                img_src = re.sub(r"rule=\$_[\w\.]+", "rule=$_59.JPG", raw_img)
+            # 2. Format: i.ebayimg.com (zastapienie miniatur $_2 / $_35 przez $_57)
+            elif re.search(r"\$_\d+\.JPG", raw_img, re.IGNORECASE):
+                img_src = re.sub(r"\$_\d+\.JPG", "$_57.JPG", raw_img, flags=re.IGNORECASE)
+            elif "$_" in raw_img:
+                img_src = re.sub(r"\$_[\w\.]+", "$_57.JPG", raw_img)
+            elif "?" in raw_img:
+                img_src = f"{raw_img.split('?')[0]}?rule=$_59.JPG"
+            else:
+                img_src = raw_img
 
         if ad_id:
             offers.append({
@@ -62,12 +56,12 @@ if response.status_code == 200:
                 "title": title,
                 "description": description,
                 "price": price,
-                "image": hd_image,
+                "image": img_src,
                 "url": link
             })
 
     with open("offers.json", "w", encoding="utf-8") as f:
         json.dump(offers, f, ensure_ascii=False, indent=2)
-    print(f"Erfolg: {len(offers)} Inserate mit echten HD-Bildern gespeichert.")
+    print(f"Erfolg: {len(offers)} Inserate in HD-Qualitaet gespeichert.")
 else:
     print(f"Fehler: Statuscode {response.status_code}")
