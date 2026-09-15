@@ -1,4 +1,5 @@
 import json
+import re
 import cloudscraper
 from bs4 import BeautifulSoup
 
@@ -25,10 +26,13 @@ if response.status_code == 200:
         price_tag = ad.find("p", class_="aditem-main--middle--price-shipping--price")
         price = price_tag.get_text(strip=True) if price_tag else "Cena na zapytanie"
         
+        # Pobieranie zdjęcia i zmiana miniatury na pełną rozdzielczość
         img_tag = ad.find("img")
         img_src = ""
         if img_tag:
-            img_src = img_tag.get("src") or img_tag.get("data-src") or ""
+            raw_img = img_tag.get("src") or img_tag.get("data-src") or ""
+            # Zamienia np. $_2.JPG lub $_35.JPG na $_57.JPG (duży, ostry plik)
+            img_src = re.sub(r"\$_\d+\.(JPG|JPEG|PNG|jpg|jpeg|png)", r"$_57.JPG", raw_img)
 
         if ad_id:
             offers.append({
