@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aktualne Ogłoszenia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased p-6">
+
+  <div class="max-w-6xl mx-auto">
+    <header class="text-center mb-8">
+      <h1 class="text-3xl font-bold mb-2">Moje Ogłoszenia</h1>
+      <p class="text-gray-600">Oferty wystawione na Kleinanzeigen</p>
+    </header>
+
+    <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <script>
+    fetch('offers.json')
+      .then(res => res.json())
+      .then(items => {
+        const grid = document.getElementById('grid');
+        if (!items || items.length === 0) {
+          grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Brak aktywnych ogłoszeń.</p>';
+          return;
+        }
+
+        grid.innerHTML = items.map(item => `
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition">
+            <div>
+              <div class="h-48 bg-gray-200 overflow-hidden">
+                <img src="${item.image || 'https://via.placeholder.com/300x200?text=Brak+zdj%C4%99cia'}" alt="${item.title}" class="w-full h-full object-cover">
+              </div>
+              <div class="p-4">
+                <span class="text-lg font-bold text-emerald-600 block mb-1">${item.price}</span>
+                <h2 class="font-semibold text-gray-900 line-clamp-2 mb-2">${item.title}</h2>
+                <p class="text-sm text-gray-600 line-clamp-3">${item.description}</p>
+              </div>
+            </div>
+            <div class="p-4 pt-0">
+              <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded transition">
+                Zobacz na Kleinanzeigen &rarr;
+              </a>
+            </div>
+          </div>
+        `).join('');
+      })
+      .catch(err => {
+        document.getElementById('grid').innerHTML = '<p class="col-span-full text-center text-red-500">Błąd ładowania ofert.</p>';
+      });
+  </script>
+</body>
+</html>
