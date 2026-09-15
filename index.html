@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aktuelle Angebote</title>
+  <title>Aktuelle Angebote | Kleinanzeigen</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 antialiased p-6">
@@ -11,36 +11,36 @@
   <div class="max-w-6xl mx-auto">
     <header class="text-center mb-8">
       <h1 class="text-3xl font-bold mb-2">Aktuelle Angebote</h1>
-      <p class="text-gray-600">Inserate auf Kleinanzeigen</p>
+      <p class="text-gray-600">Unsere aktuellen Inserate auf Kleinanzeigen</p>
     </header>
 
     <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </div>
 
   <script>
-    fetch('offers.json')
+    fetch('offers.json?t=' + new Date().getTime())
       .then(res => res.json())
       .then(items => {
         const grid = document.getElementById('grid');
         if (!items || items.length === 0) {
-          grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Keine aktiven Anzeigen vorhanden.</p>';
+          grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Derzeit sind keine aktiven Anzeigen vorhanden.</p>';
           return;
         }
 
         grid.innerHTML = items.map(item => `
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition">
             <div>
-              <div class="h-48 bg-gray-200 overflow-hidden">
-                <img src="${item.image || 'https://via.placeholder.com/300x200?text=Kein+Bild'}" alt="${item.title}" class="w-full h-full object-cover">
+              <div class="h-60 bg-gray-50 flex items-center justify-center p-2">
+                <img src="${item.image || 'https://via.placeholder.com/400x300?text=Kein+Bild'}" alt="${item.title}" class="max-h-full max-w-full object-contain rounded">
               </div>
-              <div class="p-4">
+              <div class="p-4 border-t border-gray-100">
                 <span class="text-lg font-bold text-emerald-600 block mb-1">${item.price}</span>
                 <h2 class="font-semibold text-gray-900 line-clamp-2 mb-2">${item.title}</h2>
                 <p class="text-sm text-gray-600 line-clamp-3">${item.description}</p>
               </div>
             </div>
             <div class="p-4 pt-0">
-              <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded transition">
+              <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded transition">
                 Auf Kleinanzeigen ansehen &rarr;
               </a>
             </div>
@@ -48,7 +48,7 @@
         `).join('');
       })
       .catch(err => {
-        document.getElementById('grid').innerHTML = '<p class="col-span-full text-center text-red-500">Fehler beim Laden der Anzeigen.</p>';
+        document.getElementById('grid').innerHTML = '<p class="col-span-full text-center text-red-500">Fehler beim Laden der Angebote. Bitte versuchen Sie es spaeter erneut.</p>';
       });
   </script>
 </body>
