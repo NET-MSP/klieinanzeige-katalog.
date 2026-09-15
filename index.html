@@ -27,25 +27,35 @@
           return;
         }
 
-        grid.innerHTML = items.map(item => `
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition duration-200">
-            <div>
-              <div class="w-full aspect-[4/3] bg-gray-200 overflow-hidden">
-                <img src="${item.image || 'https://via.placeholder.com/600x450?text=Kein+Bild'}" alt="${item.title}" class="w-full h-full object-cover hover:scale-105 transition duration-300">
+        grid.innerHTML = items.map(item => {
+          // Wymuszenie jakosci HD dla kazdego formatu Kleinanzeigen:
+          let hdImg = item.image || '';
+          if (hdImg.includes('rule=')) {
+            hdImg = hdImg.replace(/rule=\$_[^&]+/, 'rule=$_59.AUTO');
+          } else if (hdImg.includes('$_')) {
+            hdImg = hdImg.replace(/\$_[\w\.]+/, '$_59.JPG');
+          }
+
+          return `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition duration-200">
+              <div>
+                <div class="w-full aspect-[4/3] bg-gray-200 overflow-hidden">
+                  <img src="${hdImg || 'https://via.placeholder.com/600x450?text=Kein+Bild'}" alt="${item.title}" class="w-full h-full object-cover hover:scale-105 transition duration-300">
+                </div>
+                <div class="p-5">
+                  <span class="text-xl font-bold text-emerald-600 block mb-2">${item.price}</span>
+                  <h2 class="font-semibold text-gray-900 text-lg line-clamp-2 mb-2 leading-snug">${item.title}</h2>
+                  <p class="text-sm text-gray-600 line-clamp-3 leading-relaxed">${item.description}</p>
+                </div>
               </div>
-              <div class="p-5">
-                <span class="text-xl font-bold text-emerald-600 block mb-2">${item.price}</span>
-                <h2 class="font-semibold text-gray-900 text-lg line-clamp-2 mb-2 leading-snug">${item.title}</h2>
-                <p class="text-sm text-gray-600 line-clamp-3 leading-relaxed">${item.description}</p>
+              <div class="p-5 pt-0">
+                <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg shadow-sm hover:shadow transition">
+                  Auf Kleinanzeigen ansehen &rarr;
+                </a>
               </div>
             </div>
-            <div class="p-5 pt-0">
-              <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg shadow-sm hover:shadow transition">
-                Auf Kleinanzeigen ansehen &rarr;
-              </a>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       })
       .catch(err => {
         document.getElementById('grid').innerHTML = '<p class="col-span-full text-center text-red-500">Fehler beim Laden der Angebote. Bitte versuchen Sie es spaeter erneut.</p>';
