@@ -1,44 +1,53 @@
 import json
 import re
-import time
-from datetime import datetime
+import sys
 import cloudscraper
 from bs4 import BeautifulSoup
 
 URL = "https://www.kleinanzeigen.de/s-bestandsliste.html?userId=128825439"
 BASE_URL = "https://www.kleinanzeigen.de"
-INTERVAL_SECONDS = 3600  # 1 godzina
 
 
 def fetch_offers():
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Pobieranie ogłoszeń...")
-    scraper = cloudscraper.create_scraper()
-    
+    print(f"Preuzimanje oglasa s: {URL}")
+    scraper = cloudscraper.create_scraper(
+        browser={
+            "browser": "chrome",
+            "platform": "windows",
+            "desktop": True
+        }
+    )
+
     try:
         response = scraper.get(URL, timeout=30)
     except Exception as e:
-        print(f"Błąd połączenia: {e}")
-        return
+        print(f"Greska mreze: {e}")
+        return False
 
     if response.status_code != 200:
-        print(f"Błąd HTTP: status {response.status_code}")
-        return
+        print(f"HTTP greska: Status {response.status_code}")
+        return False
 
     soup = BeautifulSoup(response.text, "html.parser")
     articles = soup.find_all("article", class_="aditem")
 
+    if not articles:
+        print("Nisu pronadeni oglasi (moguca blokada ili promjena HTML strukture).")
+        return False
+
     offers = []
     for ad in articles:
         ad_id = ad.get("data-adid")
-        link_tag = ad.find("a", class_="ellipsis")
+
+        link_tag = ad.find("a", class_="ellipsis") or ad.find("a", href=re.compile(r"/s-anzeige/"))
         link = BASE_URL + link_tag["href"] if link_tag and link_tag.has_attr("href") else "#"
-        title = link_tag.get_text(strip=True) if link_tag else "Kein Titel"
+        title = link_tag.get_text(strip=True) if link_tag else "Bez naslova"
 
         desc_tag = ad.find("p", class_="aditem-main--middle--description")
         description = desc_tag.get_text(strip=True) if desc_tag else ""
 
         price_tag = ad.find("p", class_="aditem-main--middle--price-shipping--price")
-        price = price_tag.get_text(strip=True) if price_tag else "Preis auf Anfrage"
+        price = price_tag.get_text(strip=True) if price_tag else "Cijena na upit"
 
         img_tag = ad.find("img")
         img_src = ""
@@ -71,22 +80,16 @@ def fetch_offers():
                 "url": link
             })
 
+    print(f"Uspjesno dohvaceno {len(offers)} oglasa.")
+
     with open("offers.json", "w", encoding="utf-8") as f:
         json.dump(offers, f, ensure_ascii=False, indent=2)
 
-    print(f"Zapisano {len(offers)} ogłoszeń do offers.json.")
+    print("Podaci su spremljeni u datoteku offers.json.")
+    return True
 
 
 if __name__ == "__main__":
-    while True:
-        try:
-            fetch_offers()
-        except Exception as e:
-            print(f"Nieoczekiwany błąd: {e}")
-
-        print(f"Następne sprawdzenie za 60 minut...\n")
-        try:
-            time.sleep(INTERVAL_SECONDS)
-        except KeyboardInterrupt:
-            print("\nZatrzymano działanie skryptu.")
-            break
+    success = fetch_offers()
+    if not success:
+        sys.exit(1)
