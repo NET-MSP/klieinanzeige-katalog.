@@ -1,65 +1,169 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aktuelle Angebote | Kleinanzeigen</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Katalog Ogloszen</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f4f6f9;
+      color: #2c3e50;
+      padding: 24px 16px;
+    }
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 28px;
+      text-align: center;
+    }
+    .header h1 { font-size: 2rem; margin-bottom: 8px; color: #1e293b; }
+    .status {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.1rem;
+      color: #64748b;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    .card-img-wrapper {
+      width: 100%;
+      height: 200px;
+      background: #e2e8f0;
+      position: relative;
+    }
+    .card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .price {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #10b981;
+      margin-bottom: 8px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #0f172a;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      flex: 1;
+    }
+    .card-desc {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-bottom: 16px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .btn {
+      display: inline-block;
+      text-align: center;
+      background: #2563eb;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #1d4ed8; }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800 antialiased p-6">
+<body>
 
-  <div class="max-w-6xl mx-auto">
-    <header class="text-center mb-8">
-      <h1 class="text-3xl font-bold mb-2">Aktuelle Angebote</h1>
-      <p class="text-gray-600">Unsere aktuellen Inserate auf Kleinanzeigen</p>
-    </header>
-
-    <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  <div class="header">
+    <h1>Katalog Ogloszen</h1>
   </div>
 
+  <div id="status" class="status">Učitavanje oglasa...</div>
+  <div id="catalog" class="grid"></div>
+
   <script>
-    fetch('offers.json?t=' + new Date().getTime())
-      .then(res => res.json())
-      .then(items => {
-        const grid = document.getElementById('grid');
-        if (!items || items.length === 0) {
-          grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Derzeit sind keine aktiven Anzeigen vorhanden.</p>';
+    async function loadOffers() {
+      const statusEl = document.getElementById('status');
+      const catalogEl = document.getElementById('catalog');
+
+      try {
+        const response = await fetch('./offers.json?t=' + new Date().getTime());
+        
+        if (!response.ok) {
+          throw new Error('Greska HTTP: ' + response.status + ' ' + response.statusText);
+        }
+
+        const offers = await response.json();
+
+        if (!Array.isArray(offers) || offers.length === 0) {
+          statusEl.textContent = 'Nema dostupnih oglasa u datoteci offers.json.';
           return;
         }
 
-        grid.innerHTML = items.map(item => {
-          // Wymuszenie jakosci HD dla kazdego formatu Kleinanzeigen:
-          let hdImg = item.image || '';
-          if (hdImg.includes('rule=')) {
-            hdImg = hdImg.replace(/rule=\$_[^&]+/, 'rule=$_59.AUTO');
-          } else if (hdImg.includes('$_')) {
-            hdImg = hdImg.replace(/\$_[\w\.]+/, '$_59.JPG');
-          }
+        statusEl.style.display = 'none';
+
+        catalogEl.innerHTML = offers.map(ad => {
+          const imgHtml = ad.image 
+            ? `<img src="${ad.image}" alt="${escapeHtml(ad.title)}" class="card-img" onerror="this.src='https://via.placeholder.com/300x200?text=Nema+slike'">` 
+            : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;">Nema slike</div>`;
 
           return `
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition duration-200">
-              <div>
-                <div class="w-full aspect-[4/3] bg-gray-200 overflow-hidden">
-                  <img src="${hdImg || 'https://via.placeholder.com/600x450?text=Kein+Bild'}" alt="${item.title}" class="w-full h-full object-cover hover:scale-105 transition duration-300">
-                </div>
-                <div class="p-5">
-                  <span class="text-xl font-bold text-emerald-600 block mb-2">${item.price}</span>
-                  <h2 class="font-semibold text-gray-900 text-lg line-clamp-2 mb-2 leading-snug">${item.title}</h2>
-                  <p class="text-sm text-gray-600 line-clamp-3 leading-relaxed">${item.description}</p>
-                </div>
-              </div>
-              <div class="p-5 pt-0">
-                <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg shadow-sm hover:shadow transition">
-                  Auf Kleinanzeigen ansehen &rarr;
-                </a>
+            <div class="card">
+              <div class="card-img-wrapper">${imgHtml}</div>
+              <div class="card-body">
+                <div class="price">${escapeHtml(ad.price || 'Cijena na upit')}</div>
+                <h2 class="card-title">${escapeHtml(ad.title || 'Bez naslova')}</h2>
+                <p class="card-desc">${escapeHtml(ad.description || '')}</p>
+                <a href="${ad.url || '#'}" target="_blank" rel="noopener noreferrer" class="btn">Pogledaj oglas</a>
               </div>
             </div>
           `;
         }).join('');
-      })
-      .catch(err => {
-        document.getElementById('grid').innerHTML = '<p class="col-span-full text-center text-red-500">Fehler beim Laden der Angebote. Bitte versuchen Sie es spaeter erneut.</p>';
-      });
+
+      } catch (err) {
+        console.error('Greska pri ucitavanju:', err);
+        statusEl.innerHTML = `<span style="color: #ef4444;">Nije uspjelo ucitavanje oglasa: ${escapeHtml(err.message)}</span>`;
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    loadOffers();
   </script>
 </body>
 </html>
