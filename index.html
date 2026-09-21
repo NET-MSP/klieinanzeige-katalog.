@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Katalog Ogloszen</title>
+  <title>Anzeigenkatalog</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -103,10 +103,10 @@
 <body>
 
   <div class="header">
-    <h1>Katalog Ogloszen</h1>
+    <h1>Anzeigenkatalog</h1>
   </div>
 
-  <div id="status" class="status">Učitavanje oglasa...</div>
+  <div id="status" class="status">Anzeigen werden geladen...</div>
   <div id="catalog" class="grid"></div>
 
   <script>
@@ -118,13 +118,13 @@
         const response = await fetch('./offers.json?t=' + new Date().getTime());
         
         if (!response.ok) {
-          throw new Error('Greska HTTP: ' + response.status + ' ' + response.statusText);
+          throw new Error('HTTP-Fehler: ' + response.status + ' ' + response.statusText);
         }
 
         const offers = await response.json();
 
         if (!Array.isArray(offers) || offers.length === 0) {
-          statusEl.textContent = 'Nema dostupnih oglasa u datoteci offers.json.';
+          statusEl.textContent = 'Keine Anzeigen in offers.json gefunden.';
           return;
         }
 
@@ -132,25 +132,25 @@
 
         catalogEl.innerHTML = offers.map(ad => {
           const imgHtml = ad.image 
-            ? `<img src="${ad.image}" alt="${escapeHtml(ad.title)}" class="card-img" onerror="this.src='https://via.placeholder.com/300x200?text=Nema+slike'">` 
-            : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;">Nema slike</div>`;
+            ? `<img src="${ad.image}" alt="${escapeHtml(ad.title)}" class="card-img" onerror="this.src='https://via.placeholder.com/300x200?text=Kein+Bild'">` 
+            : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;">Kein Bild vorhanden</div>`;
 
           return `
             <div class="card">
               <div class="card-img-wrapper">${imgHtml}</div>
               <div class="card-body">
-                <div class="price">${escapeHtml(ad.price || 'Cijena na upit')}</div>
-                <h2 class="card-title">${escapeHtml(ad.title || 'Bez naslova')}</h2>
+                <div class="price">${escapeHtml(ad.price || 'Preis auf Anfrage')}</div>
+                <h2 class="card-title">${escapeHtml(ad.title || 'Ohne Titel')}</h2>
                 <p class="card-desc">${escapeHtml(ad.description || '')}</p>
-                <a href="${ad.url || '#'}" target="_blank" rel="noopener noreferrer" class="btn">Pogledaj oglas</a>
+                <a href="${ad.url || '#'}" target="_blank" rel="noopener noreferrer" class="btn">Anzeige ansehen</a>
               </div>
             </div>
           `;
         }).join('');
 
       } catch (err) {
-        console.error('Greska pri ucitavanju:', err);
-        statusEl.innerHTML = `<span style="color: #ef4444;">Nije uspjelo ucitavanje oglasa: ${escapeHtml(err.message)}</span>`;
+        console.error('Fehler beim Laden:', err);
+        statusEl.innerHTML = `<span style="color: #ef4444;">Fehler beim Laden der Anzeigen: ${escapeHtml(err.message)}</span>`;
       }
     }
 
@@ -162,6 +162,11 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
     }
+
+    loadOffers();
+  </script>
+</body>
+</html>
 
     loadOffers();
   </script>
